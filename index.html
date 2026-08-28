@@ -1,0 +1,319 @@
+<title>PAID.</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=Spline+Sans+Mono:wght@500;600&display=swap">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --paper: #FBFAF6; --ink: #221F1A; --stamp: #CE3B1E; --gold: #F5DE6B; --carbon: #2E4E9E;
+  }
+  html, body { height: 100%; }
+  body {
+    background: #171512;
+    color: var(--ink);
+    font-family: "Spline Sans Mono", ui-monospace, Menlo, monospace;
+    display: flex; align-items: center; justify-content: center;
+    overflow: hidden;
+    -webkit-user-select: none; user-select: none;
+    touch-action: manipulation;
+  }
+  #wrap { position: relative; }
+  canvas { display: block; background: var(--paper); border-radius: 10px; box-shadow: 0 12px 60px rgba(0,0,0,.5); cursor: pointer; }
+  #hint {
+    position: absolute; left: 0; right: 0; bottom: -30px; text-align: center;
+    color: #8a857a; font-size: 12px; letter-spacing: .08em;
+  }
+</style>
+<div id="wrap">
+  <canvas id="c" width="800" height="450"></canvas>
+  <div id="hint">SPACE / CLICK / TAP — one button is all you get</div>
+</div>
+<script>
+(() => {
+"use strict";
+const cv = document.getElementById("c"), ctx = cv.getContext("2d");
+const W = 800, H = 450;
+const PAPER="#FBFAF6", INK="#221F1A", STAMP="#CE3B1E", GOLD="#F5DE6B", CARBON="#2E4E9E", FAINT="rgba(34,31,26,.14)", MUT="#8a8375";
+const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+// DPR + responsive fit
+function fit() {
+  const dpr = Math.min(devicePixelRatio || 1, 2);
+  const vw = innerWidth - 16, vh = innerHeight - 56;
+  const s = Math.min(vw / W, vh / H, 1.6);
+  cv.style.width = (W * s) + "px"; cv.style.height = (H * s) + "px";
+  cv.width = W * dpr; cv.height = H * dpr;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+addEventListener("resize", fit); fit();
+
+// ---------- audio (synthesized, created on first input) ----------
+let AC = null;
+function ac() { if (!AC) { try { AC = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {} } return AC; }
+function blip(freq, dur, type, vol, slide) {
+  const a = ac(); if (!a) return;
+  const o = a.createOscillator(), g = a.createGain();
+  o.type = type || "square"; o.frequency.value = freq;
+  if (slide) o.frequency.exponentialRampToValueAtTime(Math.max(30, freq + slide), a.currentTime + dur);
+  g.gain.value = vol || .08; g.gain.exponentialRampToValueAtTime(.0001, a.currentTime + dur);
+  o.connect(g).connect(a.destination); o.start(); o.stop(a.currentTime + dur);
+}
+function thunk() { // stamp slam: low thud + noise snap
+  const a = ac(); if (!a) return;
+  blip(90, .12, "sine", .22, -50);
+  const len = a.sampleRate * .06, buf = a.createBuffer(1, len, a.sampleRate), d = buf.getChannelData(0);
+  for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / len);
+  const src = a.createBufferSource(); src.buffer = buf;
+  const g = a.createGain(); g.gain.value = .12;
+  src.connect(g).connect(a.destination); src.start();
+}
+function ding(mult) { blip(660 + mult * 120, .09, "square", .06); setTimeout(() => blip(990 + mult * 120, .12, "square", .05), 60); }
+function buzz() { blip(140, .3, "sawtooth", .09, -60); }
+
+// ---------- state ----------
+const ZONE_X = 430, PERFECT = 17, GOOD = 46;
+let mode = "title"; // title | play | over
+let docs = [], parts = [], floats = [];
+let money, lives, streak, tSpawn, elapsed, stampAnim, shake, won, best = 0, dead;
+try { best = +localStorage.getItem("paid_best") || 0; } catch (e) {}
+function save() { try { localStorage.setItem("paid_best", best); } catch (e) {} }
+
+const JOBS = ["3 poems, rush", "logo pack, SVG", "one-page site", "CV rewrite", "browser game", "wedding page", "diss track", "spreadsheet fix", "portfolio site", "birthday page", "planner tool", "band site"];
+const DODGY = ["'FREE' EXPOSURE", "PAY U LATER", "gr8 oppurtunity", "equity only!!", "urgent prince $$", "do it 4 clout"];
+
+function reset() {
+  docs = []; parts = []; floats = [];
+  money = 0; lives = 3; streak = 0; tSpawn = .4; elapsed = 0;
+  stampAnim = 0; shake = 0; won = false; dead = false;
+}
+
+function mult() { return 1 + Math.min(2, Math.floor(streak / 8)); }
+function speedNow() { return Math.min(150 + elapsed * 3.2 + money * .9, 330); }
+function spawnGap() { return Math.max(.62, 1.5 - elapsed * .012 - money * .004); }
+
+function spawn() {
+  const dodgy = money >= 16 && Math.random() < .18;
+  docs.push({
+    x: -130, y: 268 + (Math.random() * 8 - 4),
+    w: 116, h: 74,
+    v: speedNow() * (dodgy ? 1.08 : 1) * (0.92 + Math.random() * .18),
+    dodgy, stamped: false, dead: false, rot: (Math.random() * 4 - 2) * Math.PI / 180,
+    label: dodgy ? DODGY[(Math.random() * DODGY.length) | 0] : JOBS[(Math.random() * JOBS.length) | 0],
+    num: 100 + ((Math.random() * 900) | 0), vy: 0, vr: 0
+  });
+}
+
+function addFloat(x, y, txt, color, big) { floats.push({ x, y, txt, color, t: 0, big }); }
+function splat(x, y, color, n) {
+  for (let i = 0; i < n; i++) {
+    const a = Math.random() * Math.PI * 2, v = 40 + Math.random() * 190;
+    parts.push({ x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v - 70, r: 2 + Math.random() * 4.5, t: 0, color });
+  }
+}
+
+function loseLife(reason, x) {
+  lives--; streak = 0; buzz();
+  shake = reduceMotion ? 0 : 13;
+  addFloat(x || ZONE_X, 210, reason, STAMP, true);
+  if (lives <= 0) { dead = true; mode = "over"; if (money > best) { best = money; save(); } }
+}
+
+function slam() {
+  if (stampAnim > 0) return;
+  stampAnim = .16; thunk();
+  shake = Math.max(shake, reduceMotion ? 0 : 6);
+  // find nearest live doc within GOOD range
+  let hit = null, hd = 1e9;
+  for (const d of docs) {
+    if (d.stamped || d.dead) continue;
+    const dist = Math.abs((d.x + d.w / 2) - ZONE_X);
+    if (dist < hd) { hd = dist; hit = d; }
+  }
+  if (hit && hd <= GOOD) {
+    if (hit.dodgy) {
+      hit.dead = true; hit.vy = -160; hit.vr = .12;
+      splat(ZONE_X, 300, STAMP, 26);
+      loseLife("STAMPED A DODGY ONE", ZONE_X);
+      return;
+    }
+    hit.stamped = true; hit.vy = -230; hit.vr = (Math.random() < .5 ? -1 : 1) * .09;
+    const perfect = hd <= PERFECT;
+    const gain = (perfect ? 3 : 1) * mult();
+    money += gain; streak++;
+    splat(ZONE_X, 295, perfect ? STAMP : CARBON, perfect ? 20 : 9);
+    addFloat(ZONE_X, 226, (perfect ? "PERFECT +£" : "+£") + gain + (mult() > 1 ? "  ×" + mult() : ""), perfect ? STAMP : CARBON, perfect);
+    ding(mult());
+    if (!won && money >= 90) { won = true; addFloat(ZONE_X, 150, "£90 — YOU BEAT THE MODELS", STAMP, true); blip(523,.1,"square",.07); setTimeout(()=>blip(659,.1,"square",.07),90); setTimeout(()=>blip(784,.18,"square",.08),180); }
+  } else {
+    streak = 0;
+    addFloat(ZONE_X, 226, hit && hd < 120 ? "EARLY" : "NOTHING THERE", MUT);
+  }
+}
+
+// ---------- input ----------
+function press(e) {
+  if (e && e.preventDefault) e.preventDefault();
+  ac();
+  if (mode === "title") { reset(); mode = "play"; return; }
+  if (mode === "over") { reset(); mode = "play"; return; }
+  slam();
+}
+addEventListener("keydown", e => { if (e.code === "Space" || e.code === "Enter") press(e); });
+cv.addEventListener("pointerdown", press);
+
+// ---------- update ----------
+let last = performance.now();
+function tick(now) {
+  let dt = Math.min((now - last) / 1000, .05); last = now;
+  if (mode === "play") {
+    elapsed += dt;
+    tSpawn -= dt;
+    if (tSpawn <= 0) { spawn(); tSpawn = spawnGap() * (0.85 + Math.random() * .3); }
+    for (const d of docs) {
+      if (d.stamped || d.dead) { d.vy += 900 * dt; d.y += d.vy * dt; d.rot += d.vr; d.x += d.v * dt * .4; }
+      else d.x += d.v * dt;
+      if (!d.stamped && !d.dead && d.x > ZONE_X + GOOD + d.w / 2 + 8) {
+        if (d.dodgy) { d.dead = true; money += 1; addFloat(d.x, 240, "dodged +£1", CARBON); streak++; }
+        else { d.dead = true; loseLife("ONE GOT AWAY", Math.min(d.x, 700)); }
+      }
+    }
+    docs = docs.filter(d => d.y < 600 && d.x < 980);
+  }
+  for (const p of parts) { p.t += dt; p.vy += 700 * dt; p.x += p.vx * dt; p.y += p.vy * dt; }
+  parts = parts.filter(p => p.t < .8);
+  for (const f of floats) f.t += dt;
+  floats = floats.filter(f => f.t < 1.1);
+  if (stampAnim > 0) stampAnim -= dt;
+  if (shake > 0) shake = Math.max(0, shake - 60 * dt);
+  draw();
+  requestAnimationFrame(tick);
+}
+
+// ---------- draw ----------
+function docDraw(d) {
+  ctx.save();
+  ctx.translate(d.x + d.w / 2, d.y + d.h / 2); ctx.rotate(d.rot);
+  ctx.fillStyle = "#fff"; ctx.strokeStyle = d.dodgy ? STAMP : "rgba(34,31,26,.5)"; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.roundRect(-d.w / 2, -d.h / 2, d.w, d.h, 4); ctx.fill(); ctx.stroke();
+  ctx.fillStyle = d.dodgy ? STAMP : INK;
+  ctx.font = "600 11px 'Spline Sans Mono', monospace"; ctx.textAlign = "left";
+  ctx.fillText(d.dodgy ? "??? #" + d.num : "INV #" + d.num, -d.w / 2 + 9, -d.h / 2 + 18);
+  ctx.fillStyle = d.dodgy ? STAMP : MUT; ctx.font = "500 9.5px 'Spline Sans Mono', monospace";
+  ctx.fillText(d.label.slice(0, 17), -d.w / 2 + 9, -d.h / 2 + 33);
+  ctx.strokeStyle = FAINT; ctx.lineWidth = 1.5;
+  for (let i = 0; i < 2; i++) { ctx.beginPath(); ctx.moveTo(-d.w / 2 + 9, -d.h / 2 + 44 + i * 9); ctx.lineTo(d.w / 2 - 9, -d.h / 2 + 44 + i * 9); ctx.stroke(); }
+  if (d.stamped) {
+    ctx.rotate(-.14); ctx.strokeStyle = STAMP; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.roundRect(-34, -16, 68, 30, 5); ctx.stroke();
+    ctx.fillStyle = STAMP; ctx.font = "800 17px 'Bricolage Grotesque', system-ui, sans-serif"; ctx.textAlign = "center";
+    ctx.fillText("PAID", 0, 6);
+  }
+  ctx.restore();
+}
+
+function draw() {
+  ctx.save();
+  if (shake > 0) ctx.translate((Math.random() - .5) * shake, (Math.random() - .5) * shake);
+  ctx.fillStyle = PAPER; ctx.fillRect(-20, -20, W + 40, H + 40);
+
+  // desk line + zone
+  ctx.strokeStyle = "rgba(34,31,26,.35)"; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(0, 348); ctx.lineTo(W, 348); ctx.stroke();
+  // conveyor dashes
+  ctx.strokeStyle = FAINT; ctx.setLineDash([14, 10]); ctx.lineDashOffset = -(performance.now() / 14) % 24;
+  ctx.beginPath(); ctx.moveTo(0, 306); ctx.lineTo(W, 306); ctx.stroke(); ctx.setLineDash([]);
+
+  // stamp zone marker
+  ctx.fillStyle = "rgba(206,59,30,.07)"; ctx.fillRect(ZONE_X - GOOD, 240, GOOD * 2, 108);
+  ctx.fillStyle = "rgba(206,59,30,.16)"; ctx.fillRect(ZONE_X - PERFECT, 240, PERFECT * 2, 108);
+  ctx.strokeStyle = STAMP; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(ZONE_X, 240); ctx.lineTo(ZONE_X, 348); ctx.stroke();
+
+  for (const d of docs) docDraw(d);
+
+  // the stamp (hovering above zone, slams down)
+  const sy = 150 + (stampAnim > 0 ? (stampAnim > .08 ? (0.16 - stampAnim) * 1400 : (stampAnim) * 1400) : Math.sin(performance.now() / 300) * (reduceMotion ? 0 : 5));
+  ctx.save(); ctx.translate(ZONE_X, sy);
+  ctx.fillStyle = INK; ctx.beginPath(); ctx.roundRect(-8, -66, 16, 34, 4); ctx.fill();
+  ctx.beginPath(); ctx.roundRect(-30, -34, 60, 26, 5); ctx.fill();
+  ctx.fillStyle = STAMP; ctx.beginPath(); ctx.roundRect(-34, -8, 68, 22, 3); ctx.fill();
+  ctx.restore();
+
+  // particles
+  for (const p of parts) { ctx.globalAlpha = 1 - p.t / .8; ctx.fillStyle = p.color; ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, 7); ctx.fill(); }
+  ctx.globalAlpha = 1;
+
+  // floats
+  for (const f of floats) {
+    ctx.globalAlpha = Math.max(0, 1 - f.t / 1.1);
+    ctx.fillStyle = f.color; ctx.textAlign = "center";
+    ctx.font = (f.big ? "800 22px" : "700 15px") + " 'Bricolage Grotesque', system-ui, sans-serif";
+    ctx.fillText(f.txt, f.x, f.y - f.t * 38);
+  }
+  ctx.globalAlpha = 1;
+
+  // HUD
+  ctx.textAlign = "left"; ctx.fillStyle = INK;
+  ctx.font = "800 30px 'Bricolage Grotesque', system-ui, sans-serif";
+  ctx.fillText("£" + (mode === "title" ? 0 : money), 24, 46);
+  ctx.font = "600 12px 'Spline Sans Mono', monospace"; ctx.fillStyle = MUT;
+  ctx.fillText("of £90" + (won ? " ✓ BEATEN" : ""), 24, 64);
+  // progress bar
+  ctx.fillStyle = "rgba(34,31,26,.09)"; ctx.fillRect(24, 74, 180, 10);
+  ctx.fillStyle = won ? STAMP : GOLD; ctx.fillRect(24, 74, 180 * Math.min(1, money / 90), 10);
+  ctx.strokeStyle = INK; ctx.lineWidth = 1.5; ctx.strokeRect(24, 74, 180, 10);
+  // lives as stamps
+  for (let i = 0; i < 3; i++) {
+    ctx.globalAlpha = i < lives ? 1 : .15;
+    ctx.fillStyle = STAMP; ctx.beginPath(); ctx.roundRect(W - 44 - i * 34, 28, 26, 18, 3); ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+  if (streak >= 8 && mode === "play") {
+    ctx.fillStyle = STAMP; ctx.textAlign = "right";
+    ctx.font = "800 16px 'Bricolage Grotesque', system-ui, sans-serif";
+    ctx.fillText("COMBO ×" + mult(), W - 24, 72);
+  }
+
+  if (mode === "title") {
+    overlay();
+    ctx.fillStyle = INK; ctx.textAlign = "center";
+    ctx.font = "800 84px 'Bricolage Grotesque', system-ui, sans-serif";
+    ctx.fillText("PAID.", W / 2, 195);
+    ctx.font = "600 15px 'Spline Sans Mono', monospace"; ctx.fillStyle = INK;
+    ctx.fillText("slam the stamp when the invoice is on the line", W / 2, 235);
+    ctx.fillStyle = STAMP;
+    ctx.fillText("never stamp the dodgy ones", W / 2, 260);
+    ctx.fillStyle = MUT; ctx.font = "500 13px 'Spline Sans Mono', monospace";
+    ctx.fillText("reach £90 — beat the models", W / 2, 300);
+    pressPrompt();
+    ctx.fillStyle = MUT; ctx.font = "500 11px 'Spline Sans Mono', monospace";
+    ctx.fillText("made by an AI during a live 5-hour challenge to earn £90", W / 2, 425);
+  }
+  if (mode === "over") {
+    overlay();
+    ctx.textAlign = "center";
+    ctx.save(); ctx.translate(W / 2, 165); ctx.rotate(-.06);
+    ctx.strokeStyle = STAMP; ctx.lineWidth = 5;
+    ctx.beginPath(); ctx.roundRect(-150, -38, 300, 76, 8); ctx.stroke();
+    ctx.fillStyle = STAMP; ctx.font = "800 44px 'Bricolage Grotesque', system-ui, sans-serif";
+    ctx.fillText(won ? "LEGEND" : "SACKED", 0, 15);
+    ctx.restore();
+    ctx.fillStyle = INK; ctx.font = "800 30px 'Bricolage Grotesque', system-ui, sans-serif";
+    ctx.fillText("£" + money + " earned", W / 2, 250);
+    ctx.font = "600 14px 'Spline Sans Mono', monospace"; ctx.fillStyle = MUT;
+    ctx.fillText("best: £" + best + (won ? "  ·  you beat the models" : "  ·  £90 beats the models"), W / 2, 278);
+    pressPrompt();
+  }
+  ctx.restore();
+}
+function overlay() { ctx.fillStyle = "rgba(251,250,246,.88)"; ctx.fillRect(-20, -20, W + 40, H + 40); }
+function pressPrompt() {
+  const pulse = .6 + .4 * Math.abs(Math.sin(performance.now() / 400));
+  ctx.globalAlpha = pulse; ctx.fillStyle = INK;
+  ctx.font = "700 16px 'Bricolage Grotesque', system-ui, sans-serif"; ctx.textAlign = "center";
+  ctx.fillText("— press to start —", W / 2, 352);
+  ctx.globalAlpha = 1;
+}
+
+reset(); mode = "title";
+requestAnimationFrame(tick);
+})();
+</script>
