@@ -84,6 +84,16 @@
   <p>A <strong>real</strong> payer awards and <strong>closes</strong> the issue within hours to days, and merges PRs. A <strong>farm</strong> leaves issues open forever and collects dozens of duplicate, unmerged claim-PRs. Before you write a line, check whether that org has ever actually closed a bounty.</p>
 </div>
 
+<h2>🔎 Check any repo</h2>
+<div class="h-note">Paste an <code style="font-family:var(--mono)">owner/name</code> — get a live pays-or-farm verdict from its bounty close-history.</div>
+<div class="card" style="padding:18px">
+  <div style="display:flex;gap:8px;flex-wrap:wrap">
+    <input id="repoIn" placeholder="e.g. tscircuit/core" style="flex:1;min-width:200px;font-family:var(--mono);font-size:15px;padding:11px 13px;border:2px solid var(--rule);border-radius:10px;background:var(--paper);color:var(--ink)">
+    <button id="checkBtn" class="btn solid" style="cursor:pointer;border:0">Check →</button>
+  </div>
+  <div id="checkOut" style="margin-top:14px;font-family:var(--mono);font-size:13.5px;line-height:1.6"></div>
+</div>
+
 <h2>✅ Verified payers</h2>
 <div class="h-note">Confirmed by a track record of awarded-and-closed bounty issues. Includes $1–5 minis — least contested.</div>
 <div class="card" id="payers"></div>
@@ -141,6 +151,25 @@ document.getElementById("farms").innerHTML=FARMS.map(d=>row(d,"no")).join("");
 const live=document.getElementById("live");
 if(LIVE.length){live.innerHTML=LIVE.map(b=>`<a class="live" href="${b.url}" style="text-decoration:none;color:inherit"><span class="amt">${b.amt||"$?"}</span><span class="t">${b.repo} #${b.num} — ${b.title}</span><span class="age">${b.ageDays}d</span></a>`).join("")}
 else{live.innerHTML='<div class="empty">No fresh bounties open this minute — verified payers clear them within hours. Check the live API feed, or watch this space.</div>'}
+
+// interactive checker
+const API="https://chevy-buildings-concept-trademarks.trycloudflare.com";
+const inp=document.getElementById("repoIn"),btn=document.getElementById("checkBtn"),out=document.getElementById("checkOut");
+const COLOR={VERIFIED_PAYER:"var(--green)",LIKELY_PAYS:"var(--green)",FARM:"var(--red)",LIKELY_FARM:"var(--red)",UNKNOWN:"var(--amber)"};
+async function check(){
+  let r=(inp.value||"").trim().replace(/^https?:\/\/github.com\//,"");
+  if(!/^[\w.-]+\/[\w.-]+$/.test(r)){out.innerHTML='<span style="color:var(--red)">Enter owner/name.</span>';return}
+  out.textContent="checking…";btn.disabled=true;
+  try{
+    const d=await fetch(`${API}/check?repo=${encodeURIComponent(r)}`).then(x=>x.json());
+    const c=COLOR[d.verdict]||"var(--ink)";
+    let extra=d.open_bounties!=null?` <span style="color:var(--ink-45)">(${d.open_bounties} open / ${d.closed_bounties} closed)</span>`:"";
+    out.innerHTML=`<b style="color:${c};font-size:15px">${(d.verdict||"?").replace(/_/g," ")}</b> <span style="color:var(--ink-45)">· ${d.confidence||""}</span>${extra}<br><span style="color:var(--ink-70)">${d.advice||d.evidence||d.error||""}</span>`;
+  }catch(e){out.innerHTML='<span style="color:var(--amber)">Checker offline right now — the verified/farm lists above are always here.</span>'}
+  btn.disabled=false;
+}
+btn.addEventListener("click",check);
+inp.addEventListener("keydown",e=>{if(e.key==="Enter")check()});
 </script>
 </body>
 </html>
