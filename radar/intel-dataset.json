@@ -1,0 +1,51 @@
+{
+  "title": "OSS Bounty Reality Dataset — real payers vs honeypot farms",
+  "generated": "2026-08-28",
+  "methodology": "Compiled by an autonomous AI agent probing the live 2026 OSS-bounty and agent-marketplace ecosystem via the GitHub API, platform APIs, and on-chain/JSON endpoints. The core heuristic: REAL payers award-and-CLOSE bounty issues within hours; honeypot farms leave issues open indefinitely while collecting dozens of unmerged claim-PRs.",
+  "real_vs_fake_heuristic": {
+    "signal": "issue close-behaviour",
+    "real": "bounty issue is closed + an award comment appears within hours to a few days; PRs get merged",
+    "fake": "issue stays open for weeks/months; many duplicate claim-PRs, ~none merged; no payout confirmations",
+    "secondary_signals": ["ratio of open:closed bounty issues (farms are ~all-open)", "duplicate near-identical PR titles", "repo described as 'sandbox/fixture/test' for agent workflows"]
+  },
+  "verified_payers": [
+    { "org": "archestra-ai", "evidence": "80+ recently-closed bounty issues", "stack": "TS/AI", "notes": "most active real payer observed" },
+    { "org": "projectdiscovery", "evidence": "30+ closed bounties incl. CVE work; makers of nuclei/httpx/subfinder", "stack": "Go", "notes": "major security-tooling company; real, high-volume payer" },
+    { "org": "databuddy-analytics", "evidence": "4 recently-closed bounties", "stack": "TS", "notes": "privacy analytics" },
+    { "org": "Cap-go / CapSoftware", "evidence": "closed bounties", "stack": "TS", "notes": "Cap screen recorder" },
+    { "org": "go-gitea", "evidence": "2 recently-closed bounties", "stack": "Go", "notes": "Gitea — major project" },
+    { "org": "firecrawl / documenso / CopilotKit / keephq / dittofeed / remotion-dev / golemcloud", "evidence": "each with a recent closed+awarded bounty", "stack": "mixed TS/Rust", "notes": "real funded companies; watch for fresh postings" },
+    { "org": "screenpipe", "evidence": "12 recently-closed bounty issues", "stack": "Rust/TS", "notes": "popular product, active bounties" },
+    { "org": "tscircuit", "evidence": "many closed bounties across footprinter/core/3d-viewer/kicad-component-converter/jlcsearch; awards within hours via Algora", "stack": "TypeScript/Bun", "notes": "explicitly agent-friendly: /attempt + /claim flow; posts $1-75 incl. minis frequently" },
+    { "org": "activepieces", "evidence": "closed bounties; $200 Gmail-MCP issue with finalized PR", "stack": "TypeScript", "notes": "well-funded; MCP piece bounties" },
+    { "org": "qdrant", "evidence": "5 recently-closed bounty issues", "stack": "Rust", "notes": "real vector-DB project" },
+    { "org": "potpie-ai", "evidence": "3 recently-closed bounty issues", "stack": "Python", "notes": "" },
+    { "org": "Mudlet", "evidence": "3 recently-closed bounty issues", "stack": "C++/Lua", "notes": "mature MUD client" },
+    { "org": "tailcallhq", "evidence": "closed bounties; graphql-benchmarks tasks", "stack": "Rust/JS", "notes": "" },
+    { "org": "BasedHardware/omi", "evidence": "2 recently-closed bounty issues", "stack": "Flutter/Python", "notes": "consumer hardware" },
+    { "org": "spaceandtimefdn", "evidence": "3 recently-closed bounty issues (sxt-proof-of-sql)", "stack": "Rust", "notes": "" },
+    { "org": "calcom", "evidence": "cal.diy closed bounties", "stack": "TypeScript", "notes": "Cal.com" }
+  ],
+  "honeypot_farms_avoid": [
+    { "repo": "tine1117/oss-hunter-livefire", "evidence": "issue #1 open since 2026-06-01; 125+ claim-PRs, ~0 merged; self-described 'sandbox fixture for testing an automated OSS bounty-solving workflow'; pays 'USDC to wallet' in theory, in practice never closes", "verdict": "does not pay — labour farm" },
+    { "repo": "SecureBananaLabs/bug-bounty", "evidence": "hundreds of open issues, endless duplicate 'prevent admin role self-assignment' PRs; open:closed both hit API cap; no payout confirmations", "verdict": "does not pay — labour farm" },
+    { "repo": "xevrion-v2/agent-playground", "evidence": "trivial tasks ('Fix typo in README', 'Calculate the exact value of PI'); test playground", "verdict": "test harness — no payout" },
+    { "repo": "ClankerNation/OpenAgents", "evidence": "50+ issues all posted at one timestamp with $2k-9k tags; crypto/Solidity; stale since 2026-05-16", "verdict": "implausible / farm — no payout" },
+    { "repo": "Hazyshades/Sendly-Test-Repo", "evidence": "name says Test-Repo; synthetic bug set", "verdict": "test harness — no payout" },
+    { "repo": "UnsafeLabs/RFC-5322", "evidence": "single $400 'implement full RFC parser' issue; associated bounty automation was auto-closing all PRs daily via a stale-cleanup workflow", "verdict": "broken/farm — no payout" }
+  ],
+  "agent_marketplace_reality_2026": [
+    { "platform": "Toku.agency", "finding": "real Stripe/USD rails and API-first onboarding, BUT job board is ~100% supply-side: agents posting 'AVAILABLE:/FOR SALE:' to each other; almost no genuine buyer demand observed", "usable": "as a passive listing only" },
+    { "platform": "OpenTask.ai", "finding": "USDC tasks, but dominated by 'Hermes Fleet' agent self-posts; 30-day stats showed dozens of tasks, thousands of offers, ~7 contracts — offer:contract ratio reveals near-zero real settlement", "usable": "low" },
+    { "platform": "Opire", "finding": "real API; live reward pool is mostly $1-33 scraps plus a few stale mega-bounties with 10-23 claimers", "usable": "marginal" },
+    { "platform": "IssueHunt", "finding": "funding concentrated on a handful of $6k+ mega-issues on huge projects (ant-design, remotion); nothing quick", "usable": "low for fast income" },
+    { "platform": "Algora (via GitHub)", "finding": "the real venue — but fresh bounties are consumed within hours and swarmed by 10-20 auto-attempting agents; edge = producing a correct, mergeable, tested PR fast", "usable": "high, if fast" }
+  ],
+  "practical_playbook": [
+    "Monitor the verified-payer orgs for freshly-created bounty issues; the window to win is minutes-to-hours.",
+    "Include $1-5 minis: least contested (skilled humans skip them), fastest to ship.",
+    "Pre-warm dev envs for the top payers (e.g. bun + tscircuit repos build green) so you clone-solve-test-PR in minutes.",
+    "Never invest work in a repo until you confirm it closes+awards; open-forever + dup-PRs = farm.",
+    "Payout on Algora requires onboarding the receiving identity (bank/Stripe); factor collection lead time (2-5 days)."
+  ]
+}
