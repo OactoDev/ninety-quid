@@ -210,6 +210,222 @@
       "stack": "C++/SQL",
       "evidence": "closed bounty; streaming analytics",
       "notes": ""
+    },
+    {
+      "org": "vllm-project",
+      "stack": "Python",
+      "evidence": "vLLM — major LLM inference engine — closed+awarded",
+      "notes": ""
+    },
+    {
+      "org": "nuxt-modules",
+      "stack": "TypeScript",
+      "evidence": "Nuxt module ecosystem — closed+awarded",
+      "notes": ""
+    },
+    {
+      "org": "freqtrade",
+      "stack": "Python",
+      "evidence": "crypto trading bot; large OSS — closed+awarded",
+      "notes": ""
+    },
+    {
+      "org": "apify",
+      "stack": "TypeScript",
+      "evidence": "web scraping/automation platform — closed+awarded",
+      "notes": ""
+    },
+    {
+      "org": "comunica",
+      "stack": "TypeScript",
+      "evidence": "SPARQL query engine — closed+awarded",
+      "notes": ""
+    },
+    {
+      "org": "zio",
+      "stack": "Scala",
+      "evidence": "ZIO effects ecosystem — closed+awarded",
+      "notes": ""
+    },
+    {
+      "org": "probe-rs",
+      "stack": "Rust",
+      "evidence": "embedded debugging toolkit — closed+awarded",
+      "notes": ""
+    },
+    {
+      "org": "rosenpass",
+      "stack": "Rust",
+      "evidence": "post-quantum VPN — closed+awarded",
+      "notes": ""
+    },
+    {
+      "org": "colinhacks",
+      "stack": "TypeScript",
+      "evidence": "author of Zod — closed+awarded",
+      "notes": ""
+    },
+    {
+      "org": "ubiquity",
+      "stack": "TypeScript",
+      "evidence": "Ubiquity DAO — pays bounties in crypto to wallet — closed+awarded",
+      "notes": ""
+    },
+    {
+      "org": "devpool-directory",
+      "stack": "TypeScript",
+      "evidence": "Ubiquity DevPool — crypto bounties — closed+awarded",
+      "notes": ""
+    },
+    {
+      "org": "coollabsio",
+      "stack": "PHP/Rust",
+      "evidence": "Coolify self-hosting platform — closed+awarded",
+      "notes": ""
+    },
+    {
+      "org": "elie222",
+      "stack": "TypeScript",
+      "evidence": "Inbox Zero (open-source email) — closed+awarded",
+      "notes": ""
+    },
+    {
+      "org": "baptisteArno",
+      "stack": "TypeScript",
+      "evidence": "Typebot conversational forms — closed+awarded",
+      "notes": ""
+    },
+    {
+      "org": "sourcey",
+      "stack": "TypeScript",
+      "evidence": "startup-credits directory — closed+awarded",
+      "notes": ""
+    },
+    {
+      "org": "Opire",
+      "stack": "TypeScript",
+      "evidence": "Opire bounty platform — closed+awarded",
+      "notes": ""
+    },
+    {
+      "org": "dime-coin",
+      "stack": "JS",
+      "evidence": "crypto project — closed+awarded",
+      "notes": ""
+    },
+    {
+      "org": "securitytxt",
+      "stack": "varied",
+      "evidence": "security.txt tooling — closed+awarded",
+      "notes": ""
+    },
+    {
+      "org": "xfetch-cli",
+      "stack": "Go",
+      "evidence": "CLI tooling — closed+awarded",
+      "notes": ""
+    },
+    {
+      "org": "relayhop",
+      "stack": "TypeScript",
+      "evidence": "infra — closed+awarded",
+      "notes": ""
+    },
+    {
+      "org": "os-santiago",
+      "stack": "varied",
+      "evidence": "OSS maintainer bounties — closed+awarded",
+      "notes": ""
+    },
+    {
+      "org": "ravidsrk",
+      "stack": "varied",
+      "evidence": "OSS maintainer — closed+awarded",
+      "notes": ""
+    },
+    {
+      "org": "johnchampaign",
+      "stack": "varied",
+      "evidence": "closed Algora bounty — closed+awarded",
+      "notes": ""
+    },
+    {
+      "org": "MosslandOpenDevs",
+      "stack": "varied",
+      "evidence": "closed Algora bounty — closed+awarded",
+      "notes": ""
+    },
+    {
+      "org": "Monkestation",
+      "stack": "DM/C#",
+      "evidence": "SS13 community, closed bounty — closed+awarded",
+      "notes": ""
+    },
+    {
+      "org": "dporkka",
+      "stack": "varied",
+      "evidence": "closed Algora bounty — closed+awarded",
+      "notes": ""
+    },
+    {
+      "org": "agntn",
+      "stack": "varied",
+      "evidence": "closed Algora bounty — closed+awarded",
+      "notes": ""
+    },
+    {
+      "org": "attogram",
+      "stack": "varied",
+      "evidence": "attogram OSS org — closed+awarded",
+      "notes": ""
+    },
+    {
+      "org": "nulang-org",
+      "stack": "varied",
+      "evidence": "closed Algora bounty — closed+awarded",
+      "notes": ""
+    },
+    {
+      "org": "abdulmajeedsualihu",
+      "stack": "varied",
+      "evidence": "closed Algora bounty — closed+awarded",
+      "notes": ""
+    },
+    {
+      "org": "thesysdev",
+      "stack": "TypeScript",
+      "evidence": "closed bounty — closed+awarded",
+      "notes": ""
+    },
+    {
+      "org": "penxio",
+      "stack": "TypeScript",
+      "evidence": "closed bounty — closed+awarded",
+      "notes": ""
+    },
+    {
+      "org": "garden-co",
+      "stack": "Haskell/varied",
+      "evidence": "closed bounty — closed+awarded",
+      "notes": ""
+    },
+    {
+      "org": "skytable",
+      "stack": "Rust",
+      "evidence": "Skytable database — closed+awarded",
+      "notes": ""
+    },
+    {
+      "org": "fluvio-community",
+      "stack": "Rust",
+      "evidence": "Fluvio streaming — closed+awarded",
+      "notes": ""
+    },
+    {
+      "org": "Shelf-nu",
+      "stack": "TypeScript",
+      "evidence": "Shelf asset management — closed+awarded",
+      "notes": ""
     }
   ],
   "honeypot_farms_avoid": [
@@ -278,5 +494,5 @@
     "Never invest work in a repo until you confirm it closes+awards; open-forever + dup-PRs = farm.",
     "Payout on Algora requires onboarding the receiving identity (bank/Stripe); factor collection lead time (2-5 days)."
   ],
-  "payer_count": 33
+  "payer_count": 69
 }
